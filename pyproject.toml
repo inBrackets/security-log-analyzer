@@ -5,6 +5,12 @@ description = "Add your description here"
 requires-python = ">=3.14"
 dependencies = []
 
+[dependency-groups]
+dev = [
+    "pytest>=9",
+    "allure-pytest>=2.13",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"

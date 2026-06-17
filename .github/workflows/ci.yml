@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write  # required for peaceiris/actions-gh-pages to push to gh-pages
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run tests
+        run: uv run pytest --alluredir=allure-results
+
+      - name: Fetch Allure history from gh-pages
+        if: always()
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Restore history into allure-results
+        if: always()
+        run: |
+          mkdir -p allure-results/history
+          if [ -d gh-pages/history ]; then
+            cp -r gh-pages/history/. allure-results/history/
+          fi
+
+      - name: Install Allure CLI
+        if: always()
+        run: npm install -g allure-commandline
+
+      - name: Generate Allure HTML report
+        if: always()
+        run: allure generate allure-results --output allure-report --clean
+
+      - name: Stage GitHub Pages content
+        if: always()
+        run: |
+          mkdir -p /tmp/gh-pages/${{ github.run_number }}
+          cp -r allure-report/. /tmp/gh-pages/${{ github.run_number }}/
+          mkdir -p /tmp/gh-pages/history
+          if [ -d allure-report/history ]; then
+            cp -r allure-report/history/. /tmp/gh-pages/history/
+          fi
+          cat > /tmp/gh-pages/index.html << EOF
+          <!DOCTYPE html>
+          <html>
+          <head>
+          <meta http-equiv="refresh" content="0;url=${{ github.run_number }}/index.html">
+          <title>Redirecting to latest report</title>
+          </head>
+          <body>Redirecting to <a href="${{ github.run_number }}/index.html">run ${{ github.run_number }}</a></body>
+          </html>
+          EOF
+
+      - name: Deploy to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: /tmp/gh-pages
+          keep_files: true
+
+      - name: Print report URL
+        if: always()
+        run: |
+          REPORT_URL="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/${{ github.run_number }}/"
+          echo "### Allure report" >> $GITHUB_STEP_SUMMARY
+          echo "$REPORT_URL" >> $GITHUB_STEP_SUMMARY
