@@ -1,0 +1,1 @@
+WARNING  analyzer.parsers.web_parser:web_parser.py:77 [webserver.log:2] Unrecognised format — skipping: '[MALFORMED ENTRY - system restart'

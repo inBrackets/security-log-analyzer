@@ -1,0 +1,2 @@
+WARNING  analyzer.parsers.web_parser:web_parser.py:77 [webserver.log:2] Unrecognised format — skipping: '[MALFORMED ENTRY - system restart'
+WARNING  analyzer.parsers.web_parser:web_parser.py:77 [webserver.log:3] Unrecognised format — skipping: 'this line is also not CLF'
