@@ -27,7 +27,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--auth-log", type=Path, help="Explicit path to auth.log (overrides --log-dir)")
     p.add_argument("--web-log",  type=Path, help="Explicit path to webserver.log (overrides --log-dir)")
     p.add_argument(
-        "--output", choices=["table", "json"], default="table",
+        "--output", choices=["table", "json", "narrative"], default="table",
         help="Output format",
     )
     p.add_argument(
@@ -63,6 +63,7 @@ def _configure_logging(verbose: bool, parse_log: Path | None) -> None:
                           output is discarded.
     """
     root = logging.getLogger("analyzer.parsers")
+    root.handlers.clear()  # prevent duplicate handlers when called in a loop
     root.setLevel(logging.DEBUG if verbose else logging.WARNING)
 
     fmt = logging.Formatter("%(levelname)-8s %(name)s: %(message)s")
@@ -81,7 +82,66 @@ def _configure_logging(verbose: bool, parse_log: Path | None) -> None:
         root.addHandler(file_handler)
 
 
-def run(argv: list[str] | None = None) -> int:
+def _choose(prompt: str, options: list[tuple[str, str]], default_idx: int = 0) -> str:
+    print(f"\n{prompt}")
+    for i, (label, desc) in enumerate(options):
+        tag = " (default)" if i == default_idx else ""
+        suffix = f"  {desc}" if desc else ""
+        print(f"  {i + 1}) {label}{suffix}{tag}")
+    while True:
+        raw = input("  > ").strip()
+        if not raw:
+            return options[default_idx][0]
+        if raw.isdigit() and 1 <= int(raw) <= len(options):
+            return options[int(raw) - 1][0]
+        print(f"  Enter a number between 1 and {len(options)}.")
+
+
+def _ask_yes_no(prompt: str, default: bool = False) -> bool:
+    hint = "[Y/n]" if default else "[y/N]"
+    raw = input(f"\n  {prompt} {hint}: ").strip().lower()
+    return default if not raw else raw.startswith("y")
+
+
+def _interactive_menu() -> list[str]:
+    print("\nSecurity Log Analyzer")
+    print("=" * 30)
+
+    print("\nLog directory (must contain auth.log and webserver.log):")
+    log_dir = input("  Path [logs]: ").strip() or "logs"
+
+    fmt = _choose(
+        "Output format:",
+        [
+            ("narrative", "attack story grouped by IP"),
+            ("table",     "flat columnar summary"),
+            ("json",      "machine-readable JSON"),
+        ],
+        default_idx=0,
+    )
+
+    sev = _choose(
+        "Minimum severity to report:",
+        [
+            ("MEDIUM",   "brute force, injection, traversal, escalation"),
+            ("HIGH",     "confirmed multi-attempt attacks"),
+            ("CRITICAL", "breaches and confirmed compromises only"),
+            ("LOW",      ""),
+            ("INFO",     "everything"),
+        ],
+        default_idx=0,
+    )
+
+    argv = ["--log-dir", log_dir, "--output", fmt, "--min-severity", sev]
+
+    if fmt == "table" and _ask_yes_no("Show supporting log lines?", default=False):
+        argv.append("--show-evidence")
+
+    print("\n" + "-" * 30 + "\n")
+    return argv
+
+
+def _execute(argv: list[str]) -> int:
     args = _build_parser().parse_args(argv)
     _configure_logging(args.verbose, args.parse_log)
 
@@ -96,7 +156,6 @@ def run(argv: list[str] | None = None) -> int:
     rules = build_rules()
     engine = AnalysisEngine(rules)
 
-    # Stream both parsers as a single lazy sequence — neither file is loaded whole
     entries = chain(
         AuthLogParser().parse(auth_path),
         WebLogParser().parse(web_path),
@@ -110,9 +169,25 @@ def run(argv: list[str] | None = None) -> int:
 
     if args.output == "json":
         print(output.format_json(incidents))
+    elif args.output == "narrative":
+        print(output.format_narrative(incidents))
     else:
         print(output.format_table(incidents))
         if args.show_evidence:
             output.print_evidence(incidents)
 
     return 0
+
+
+def run(argv: list[str] | None = None) -> int:
+    if argv is None and not sys.argv[1:]:
+        while True:
+            chosen = _interactive_menu()
+            _execute(chosen)
+            ans = input("\nPress Enter to return to main menu, or Q to quit: ").strip().lower()
+            if ans.startswith("q"):
+                print()
+                break
+        return 0
+
+    return _execute(argv)

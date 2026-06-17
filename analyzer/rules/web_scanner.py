@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import defaultdict, deque
+from collections import Counter, defaultdict, deque
 from collections.abc import Iterator
 
 from .base import BaseRule
@@ -27,6 +27,8 @@ class WebScannerRule(BaseRule):
         self._window = window_seconds
         # ip → deque of (timestamp, path, raw_line)
         self._hits: dict[str, deque] = defaultdict(deque)
+        # ip → Counter of path → occurrences within the window (O(1) distinct check)
+        self._path_counts: dict[str, Counter[str]] = defaultdict(Counter)
         self._alerted: set[str] = set()
 
     def feed(self, entry: LogEntry) -> Iterator[Incident]:
@@ -40,22 +42,31 @@ class WebScannerRule(BaseRule):
             return
 
         buf = self._hits[ip]
-        buf.append((entry.timestamp, entry.path, entry.raw))
-        self._evict(buf, entry.timestamp, self._window)
+        counts = self._path_counts[ip]
 
-        distinct = {e[1] for e in buf}
-        if len(distinct) >= self._threshold:
+        buf.append((entry.timestamp, entry.path, entry.raw))
+        counts[entry.path] += 1
+
+        # Inline eviction so we can decrement counts for expelled entries.
+        while buf and (entry.timestamp - buf[0][0]).total_seconds() > self._window:
+            _, old_path, _ = buf.popleft()
+            counts[old_path] -= 1
+            if counts[old_path] == 0:
+                del counts[old_path]
+
+        if len(counts) >= self._threshold:
             self._alerted.add(ip)
+            n = len(counts)
             yield Incident(
                 rule_name=self.name,
                 severity=Severity.HIGH,
                 source_ip=ip,
                 description=(
-                    f"Web scanner: {ip} probed {len(distinct)} distinct paths "
+                    f"Web scanner: {ip} probed {n} distinct paths "
                     f"with 403/404 responses within {self._window}s"
                 ),
                 evidence=[e[2] for e in buf],
                 first_seen=buf[0][0],
                 last_seen=entry.timestamp,
-                count=len(distinct),
+                count=n,
             )
