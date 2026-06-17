@@ -46,14 +46,22 @@ The project uses no `pip install` step for the tool itself -- all imports are fr
 
 ## Running the Tool
 
-```bash
-# Analyse the default log directory (logs/auth.log + logs/webserver.log)
-python main.py
+Running without arguments launches an **interactive menu** that walks you through log directory, output format, severity filter, and evidence display:
 
-# Filter to HIGH and above, show supporting log lines for each incident
+```bash
+python main.py
+```
+
+To run non-interactively, pass flags directly:
+
+```bash
+# Human-readable narrative report (attack story grouped by attacker IP)
+python main.py --output narrative
+
+# Flat table filtered to HIGH and above, with supporting log lines
 python main.py --min-severity HIGH --show-evidence
 
-# Output structured JSON (for piping into a SIEM or jq)
+# Structured JSON for piping into a SIEM or jq
 python main.py --output json --min-severity LOW
 
 # Point at non-default log files
@@ -62,6 +70,30 @@ python main.py --auth-log /var/log/auth.log --web-log /var/log/nginx/access.log
 # Capture parse warnings to a dedicated file (useful in CI/CD pipelines)
 python main.py --parse-log parse-errors.log --verbose
 ```
+
+### Example output (narrative mode)
+
+```
+======================================================================
+  10.0.0.50  |  CRITICAL  |  COORDINATED MULTI-VECTOR ATTACK
+======================================================================
+
+  10:00:03  [CRITICAL ]  cross_protocol_brute_force
+    Multi-vector brute force: 10.0.0.50 attacking via SSH + WEB simultaneously
+    6 events over 3s
+
+  10:00:06  [CRITICAL ]  sql_injection
+    SQL injection on '/search' - server returned 200, payload may have reached the DB
+
+----------------------------------------------------------------------
+  (server-local)  |  CRITICAL  |  PRIVILEGE ESCALATION
+----------------------------------------------------------------------
+
+  10:00:15  [CRITICAL ]  suspicious_sudo
+    Suspicious sudo: 'johndoe' ran '/bin/cat /etc/shadow' as 'root'
+```
+
+Incidents are grouped by attacker IP, sorted chronologically within each group, and the group header is labelled with a threat category (`COORDINATED MULTI-VECTOR ATTACK`, `PRIVILEGE ESCALATION`, `EXPLOITATION ATTEMPT`, etc.). CRITICAL groups use a `=` border; lower-severity groups use `-`.
 
 ### Example output (table mode)
 
@@ -83,9 +115,9 @@ CRITICAL  suspicious_sudo        N/A               Suspicious sudo: 'johndoe' ra
 | `--log-dir PATH` | `logs/` | Directory containing `auth.log` and `webserver.log` |
 | `--auth-log PATH` | (none) | Override path to auth log |
 | `--web-log PATH` | (none) | Override path to web server log |
-| `--output` | `table` | `table` or `json` |
+| `--output` | `table` | `table`, `json`, or `narrative` |
 | `--min-severity` | `MEDIUM` | `INFO` / `LOW` / `MEDIUM` / `HIGH` / `CRITICAL` |
-| `--show-evidence` | off | Print the raw log lines that triggered each incident |
+| `--show-evidence` | off | Print the raw log lines that triggered each incident (table mode only) |
 | `--verbose`, `-v` | off | Show parse warnings on stderr |
 | `--parse-log FILE` | (none) | Write parse warnings to a file |
 
@@ -134,7 +166,7 @@ security-log-analyzer/
 |   +-- models.py                  LogEntry, AuthEntry, WebEntry, Incident, Severity
 |   +-- engine.py                  AnalysisEngine - wires parsers to rules
 |   +-- cli.py                     Argument parsing, logging config, output dispatch
-|   +-- output.py                  Table and JSON formatters
+|   +-- output.py                  Table, JSON, and narrative formatters
 |   +-- parsers/
 |   |   +-- base.py                BaseParser ABC
 |   |   +-- auth_parser.py         Syslog parser (auth.log)
@@ -149,6 +181,8 @@ security-log-analyzer/
 |       +-- path_traversal.py
 |       +-- suspicious_sudo.py
 |       +-- user_enumeration.py
+|       +-- web_scanner.py
+|       +-- rapid_request.py
 |       +-- __init__.py            build_rules() factory
 +-- tests/
     +-- conftest.py                Shared fixtures and entry factories
@@ -239,7 +273,23 @@ A naive keyword match (flag any request containing `'` or `SELECT`) would genera
 
 **Threshold: 6 points.** A bare apostrophe (as in `O'Brien`) scores 0 and never fires. SQL structural combinations accumulate score rapidly: `' UNION SELECT * FROM users--` scores 21 points across three signals.
 
-#### 6. Production-grade error handling in parsers
+#### 6. Narrative output with threat labelling
+
+The `narrative` output mode groups incidents by attacker IP and renders a human-readable attack story rather than a flat table. Each IP block is sorted chronologically, headed by a severity bar (`=` for CRITICAL, `-` for lower), and labelled with a threat category derived from the rule set that fired:
+
+| Rules present | Label |
+|---|---|
+| `cross_protocol_brute_force` | COORDINATED MULTI-VECTOR ATTACK |
+| `suspicious_sudo` | PRIVILEGE ESCALATION |
+| `sql_injection` at CRITICAL | POSSIBLE DATA EXFILTRATION |
+| `sql_injection` or `path_traversal` | EXPLOITATION ATTEMPT |
+| `ssh_brute_force` / `web_brute_force` | CREDENTIAL ATTACK / BREACH |
+| `user_enumeration` | RECONNAISSANCE |
+| anything else | ACTIVE THREAT / SUSPICIOUS ACTIVITY |
+
+This labelling is intentionally coarse-grained: the goal is a one-line context for a human analyst to prioritise triage, not a replacement for the raw incident data.
+
+#### 7. Production-grade error handling in parsers
 
 Log files in production environments contain binary garbage, truncated entries, and encoding anomalies. The parsers handle all of these defensively:
 
