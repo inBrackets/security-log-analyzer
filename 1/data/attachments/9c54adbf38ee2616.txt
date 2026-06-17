@@ -1,0 +1,1 @@
+WARNING  analyzer.parsers.auth_parser:auth_parser.py:91 [auth.log:2] Unrecognised format — skipping: '[MALFORMED ENTRY - system restart'
