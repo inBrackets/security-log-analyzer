@@ -1,0 +1,50 @@
+﻿[2026-06-16 23:36:16] PROMPT: every future prompt and summary of an output put in the prompts.log file starting from this one
+[2026-06-16 23:36:25] --- TURN END ---
+
+[2026-06-16 23:38:05] --- TURN END ---
+
+[2026-06-16 23:38:33] --- TURN END ---
+
+[2026-06-16 23:44:39] PROMPT: Analyse the logs/auth.log and logs/webserver.log, extract and interpret the available values and put them into a table
+[2026-06-16 23:45:50] --- TURN END ---
+
+[2026-06-16 23:49:00] PROMPT: how did you asses the severity based on the auth.log?
+[2026-06-16 23:49:18] --- TURN END ---
+
+[2026-06-17 00:01:59] PROMPT: Prepare an CLI tool in python for security log analysis. The tool has to process the webserver.log and auth.log files to identify security incidents (brute force, sql injection).I want the rules to be easily extensible (in lin with the Open Close Principle from SOLID) and the data processing to have a low memory footprint (using streaming/generators). Please suggest a suitable directory and class structure.
+[2026-06-17 00:12:26] --- TURN END ---
+
+[2026-06-17 00:13:54] PROMPT: ┼Üwietnie, przyjmijmy t─Ö struktur─Ö. Teraz skupmy si─Ö na parsowaniu. W pliku webserver.log mam standardowe linie CLF, ale pojawia si─Ö te┼╝ linia uszkodzona: [MALFORMED ENTRY - system restart. Z kolei auth.log to format Syslog.
+
+Napiszmy modu┼é parsera (np. przy u┼╝yciu wyra┼╝e┼ä regularnych Regex). Jak powinni┼ømy obs┼éu┼╝y─ç t─Ö uszkodzon─à lini─Ö w kodzie produkcyjnym, aby program nie przerwa┼é dzia┼éania, zalogowa┼é b┼é─àd i przetwarza┼é plik dalej? Wygeneruj kod modu┼éu parsera z uwzgl─Ödnieniem tej obs┼éugi b┼é─Öd├│w.
+[2026-06-17 00:16:17] --- TURN END ---
+
+[2026-06-17 00:17:31] PROMPT: Teraz przejd┼║my do silnika detekcji (Analyzer). Musimy zaimplementowa─ç regu┼éy dla:
+
+SQL Injection w parametrach URL (pami─Ötaj─àc, ┼╝e zwyk┼ée nazwisko 'O'Brien' nie jest atakiem).
+
+Brute Force, kt├│ry wida─ç w obu plikach log├│w: to samo IP (10.0.0.50) generuje b┼é─Ödy 401 na webie i 'Failed password' na SSH, a potem nast─Öpuje udane logowanie.
+
+Jak mo┼╝emy efektywnie korelowa─ç te zdarzenia czasowo i po IP w pami─Öci, nie blokuj─àc zasob├│w? Zaproponuj implementacj─Ö silnika analizy regu┼é.
+[2026-06-17 00:22:27] --- TURN END ---
+
+[2026-06-17 05:44:08] PROMPT: As a QA Engineer, I need to cover this code with robust automated tests using pytest. I want to test happy paths, negative scenarios, and edge cases alike.
+
+Please prepare a suite of unit tests, including parameterized tests, to verify the following:
+
+Whether the parser correctly extracts data from valid log lines.
+
+Whether a corrupted line (MALFORMED ENTRY) raises the expected exception or is properly skipped.
+
+Whether the rules engine accurately detects SQLi while ignoring 'O'Brien' (ensuring no False Positives).
+
+Whether brute force attacks are correctly flagged.
+[2026-06-17 06:05:14] --- TURN END ---
+
+[2026-06-17 06:06:52] PROMPT: The business requirements mention a 'Production Context' (high data volume, continuous processing). Let's review the code we've written. How can we optimize it for performance? Should we implement multithreading/asynchrony, or is reading line-by-line (using generators) sufficient? Also, what metrics (e.g., line processing speed per second) would be worth collecting?
+[2026-06-17 06:07:56] --- TURN END ---
+
+[2026-06-17 06:09:24] PROMPT: Finally, please help me prepare a professional README.md file for the recruiter. I want it to include instructions on how to run the tool and the tests, a description of the architectural decisions (the rationale behind them), and a dedicated 'QA Approach' section explaining how I handled quality assurance, error handling, and the elimination of false positives.
+[2026-06-17 06:13:57] --- TURN END ---
+
+[2026-06-17 06:15:08] PROMPT: /simplify
