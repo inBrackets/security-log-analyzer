@@ -1,5 +1,6 @@
 from .base import BaseRule
 from .cross_protocol import CrossProtocolBruteForceRule
+from .rapid_request import RapidRequestRule
 from .ip_tracker import IPTracker
 from .path_traversal import PathTraversalRule
 from .sql_injection import SQLInjectionRule
@@ -7,6 +8,7 @@ from .ssh_brute_force import SSHBruteForceRule
 from .suspicious_sudo import SuspiciousSudoRule
 from .user_enumeration import UserEnumerationRule
 from .web_brute_force import WebBruteForceRule
+from .web_scanner import WebScannerRule
 
 
 def build_rules() -> list[BaseRule]:
@@ -34,4 +36,6 @@ def build_rules() -> list[BaseRule]:
         PathTraversalRule(),
         SuspiciousSudoRule(),
         UserEnumerationRule(),
+        WebScannerRule(),
+        RapidRequestRule(),
     ]

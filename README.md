@@ -15,6 +15,8 @@ A streaming Python CLI tool that detects security incidents in Linux auth logs a
 | `path_traversal` | `../` sequences in request paths | HIGH / CRITICAL |
 | `suspicious_sudo` | `sudo` commands accessing credential files | CRITICAL |
 | `user_enumeration` | SSH "invalid user" probing bursts | MEDIUM |
+| `web_scanner` | Single IP probing N+ distinct paths with 403/404 (recon sweep) | HIGH |
+| `rapid_request` | Burst of identical POSTs to the same endpoint within a tight window | HIGH |
 
 ---
 
@@ -102,7 +104,7 @@ python -m pytest tests/rules/test_sql_injection.py -v
 python -m pytest tests/rules/test_sql_injection.py -k "false_positive"
 ```
 
-The suite contains **142 tests** across 7 files, all passing in under 2 seconds.
+The suite contains **197 tests** across 9 files, all passing in under 2 seconds.
 
 ```
 tests/parsers/test_auth_parser.py     13 tests
@@ -112,6 +114,8 @@ tests/rules/test_sql_injection.py     36 tests
 tests/rules/test_ssh_brute_force.py   17 tests
 tests/rules/test_web_brute_force.py   17 tests
 tests/rules/test_cross_protocol.py    29 tests
+tests/rules/test_web_scanner.py       25 tests
+tests/rules/test_rapid_request.py     30 tests
 ```
 
 ---
