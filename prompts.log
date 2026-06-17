@@ -62,3 +62,6 @@ Whether brute force attacks are correctly flagged.
 [2026-06-17 06:58:49] PROMPT: Add a RapidRequestRule - fires when an IP sends more then N identical POST requests to the same endpoint within a very tight window (e.g., 2s). Catches the 10.0.0.99 API abuse, correlatable with the 429 response.
 [2026-06-17 07:02:21] --- TURN END ---
 
+[2026-06-17 07:14:46] PROMPT: Expand test coverage - there are tests for WebLogParser, AuthLogParser, and SQLInjectionRule, but no tests for SSHBruteForceRule, WebBruteForceRule, PathTraversalRule, SuspiciousSudoRule, UserEnumerationRule, or CrossProtocolBruteForceRule.
+[2026-06-17 07:18:52] --- TURN END ---
+

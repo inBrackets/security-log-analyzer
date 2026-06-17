@@ -104,18 +104,21 @@ python -m pytest tests/rules/test_sql_injection.py -v
 python -m pytest tests/rules/test_sql_injection.py -k "false_positive"
 ```
 
-The suite contains **197 tests** across 9 files, all passing in under 2 seconds.
+The suite contains **267 tests** across 12 files, all passing in under 2 seconds.
 
 ```
-tests/parsers/test_auth_parser.py     13 tests
-tests/parsers/test_web_parser.py      12 tests
-tests/rules/test_ip_tracker.py        18 tests
-tests/rules/test_sql_injection.py     36 tests
-tests/rules/test_ssh_brute_force.py   17 tests
-tests/rules/test_web_brute_force.py   17 tests
-tests/rules/test_cross_protocol.py    29 tests
-tests/rules/test_web_scanner.py       25 tests
-tests/rules/test_rapid_request.py     30 tests
+tests/parsers/test_auth_parser.py       13 tests
+tests/parsers/test_web_parser.py        12 tests
+tests/rules/test_ip_tracker.py          18 tests
+tests/rules/test_sql_injection.py       36 tests
+tests/rules/test_ssh_brute_force.py     17 tests
+tests/rules/test_web_brute_force.py     17 tests
+tests/rules/test_cross_protocol.py      29 tests
+tests/rules/test_path_traversal.py      28 tests
+tests/rules/test_suspicious_sudo.py     24 tests
+tests/rules/test_user_enumeration.py    18 tests
+tests/rules/test_web_scanner.py         25 tests
+tests/rules/test_rapid_request.py       30 tests
 ```
 
 ---
