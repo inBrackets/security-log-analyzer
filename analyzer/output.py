@@ -104,17 +104,18 @@ def format_narrative(incidents: list[Incident]) -> str:
         ip_incs.sort(key=lambda i: i.first_seen or datetime.min)
 
     # Compute max severity per IP once; reuse for both sort order and rendering.
-    ip_max: dict[str, Severity] = {
-        ip: max(incs, key=lambda i: i.severity.value).severity
-        for ip, incs in by_ip.items()
-    }
-    sorted_ips = sorted(by_ip, key=lambda ip: ip_max[ip].value, reverse=True)
+    ip_items = sorted(
+        (
+            (ip, incs, max(incs, key=lambda i: i.severity.value).severity)
+            for ip, incs in by_ip.items()
+        ),
+        key=lambda t: t[2].value,
+        reverse=True,
+    )
 
     blocks: list[str] = []
 
-    for ip in sorted_ips:
-        ip_incs = by_ip[ip]
-        max_sev = ip_max[ip]
+    for ip, ip_incs, max_sev in ip_items:
         label = _threat_label(ip_incs, max_sev)
         bar = ("=" if max_sev == Severity.CRITICAL else "-") * _NARRATIVE_WIDTH
 

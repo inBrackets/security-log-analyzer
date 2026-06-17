@@ -49,18 +49,19 @@ class RapidRequestRule(BaseRule):
         buf.append((entry.timestamp, entry.raw))
         self._evict(buf, entry.timestamp, self._window)
 
-        if len(buf) > self._threshold:
+        n = len(buf)
+        if n > self._threshold:
             self._alerted.add(key)
             yield Incident(
                 rule_name=self.name,
                 severity=Severity.HIGH,
                 source_ip=ip,
                 description=(
-                    f"Rapid requests: {ip} sent {len(buf)} POST requests to "
+                    f"Rapid requests: {ip} sent {n} POST requests to "
                     f"'{entry.path}' within {self._window}s"
                 ),
                 evidence=[e[1] for e in buf],
                 first_seen=buf[0][0],
                 last_seen=entry.timestamp,
-                count=len(buf),
+                count=n,
             )

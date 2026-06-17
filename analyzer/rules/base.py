@@ -32,6 +32,8 @@ class BaseRule(ABC):
     def flush(self) -> Iterator[Incident]:
         return iter([])
 
-    def _evict(self, buf: deque, current: datetime, window: float) -> None:
+    def _evict(self, buf: deque, current: datetime, window: float) -> list:
+        evicted = []
         while buf and (current - buf[0][0]).total_seconds() > window:
-            buf.popleft()
+            evicted.append(buf.popleft())
+        return evicted

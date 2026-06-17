@@ -47,9 +47,7 @@ class WebScannerRule(BaseRule):
         buf.append((entry.timestamp, entry.path, entry.raw))
         counts[entry.path] += 1
 
-        # Inline eviction so we can decrement counts for expelled entries.
-        while buf and (entry.timestamp - buf[0][0]).total_seconds() > self._window:
-            _, old_path, _ = buf.popleft()
+        for _, old_path, _ in self._evict(buf, entry.timestamp, self._window):
             counts[old_path] -= 1
             if counts[old_path] == 0:
                 del counts[old_path]
