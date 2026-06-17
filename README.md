@@ -1,5 +1,8 @@
 # Security Log Analyzer
 
+[![CI](https://github.com/inBrackets/security-log-analyzer/actions/workflows/ci.yml/badge.svg)](https://github.com/inBrackets/security-log-analyzer/actions/workflows/ci.yml)
+[![Allure Report](https://img.shields.io/badge/Allure-report-blue)](https://inbrackets.github.io/security-log-analyzer/)
+
 A streaming Python CLI tool that detects security incidents in Linux auth logs and web server access logs. Designed around the **Open/Closed Principle** (SOLID), it processes arbitrarily large files in constant memory by reading line-by-line through generators, with zero external runtime dependencies.
 
 ---
@@ -41,6 +44,73 @@ python -m pip install pytest
 ```
 
 The project uses no `pip install` step for the tool itself -- all imports are from the standard library.
+
+---
+
+## Quick Start
+
+### How to run (sample logs)
+
+1. Execute `main.py` from the project root:
+
+```bash
+python main.py
+```
+
+2. Follow the interactive prompts. For a full narrative report of the included sample logs:
+
+```
+Log directory (must contain auth.log and webserver.log):
+  Path [logs]:                        <- press Enter to use the default
+
+Output format:
+  1) narrative  attack story grouped by IP (default)
+  2) table      flat columnar summary
+  3) json       machine-readable JSON
+  > 1                                 <- select narrative
+
+Minimum severity to report:
+  1) MEDIUM  brute force, injection, traversal, escalation (default)
+  ...
+  5) INFO    everything
+  > 5                                 <- show all severity levels
+
+Time range filter:
+  From [e.g. 2026-06-17 00:00, blank = no limit]:   <- press Enter
+  To   [e.g. 2026-06-17 23:59, blank = no limit]:   <- press Enter
+```
+
+### Run with generated live data
+
+1. Start the log generator (runs until Ctrl+C, use `--speed 10` to fill logs faster):
+
+```bash
+python generate_live_logs.py --speed 10
+```
+
+2. New log files appear in `logs-live/` (`auth.log` and `webserver.log`) and grow in real time.
+
+3. In a separate terminal, run `main.py` and point it at the live directory:
+
+```bash
+python main.py
+```
+
+```
+  Path [logs]: logs-live              <- type the live log directory
+
+Output format:
+  > 1                                 <- narrative
+
+Minimum severity to report:
+  > 5                                 <- INFO (everything)
+
+Time range filter:
+  From ...:                           <- press Enter
+  To   ...:                           <- press Enter
+```
+
+Re-run the analyzer at any time while the generator is running to see new incidents accumulate.
 
 ---
 
