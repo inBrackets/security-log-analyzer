@@ -1,0 +1,28 @@
+How to run:
+1. Execute the main.py file in the root directory
+2. Follow the instructions in the interaction mode. Sample flow:
+* Path [logs]:
+* 1) narrative  attack story grouped by IP (default)
+* 5) INFO  everything
+* Time range filter: (leave blank and press enter twice)
+
+Run with generated data:
+1. Execute the generate_live_logs.py file
+2. Find the new log files in directory /logs-live
+3. Run the main.py, but with the different directory in the interactive mode
+* Path [logs]: logs-live
+* 1) narrative  attack story grouped by IP (default)
+* 5) INFO  everything
+* Time range filter: (leave blank and press enter twice)
+
+Conversation with Gemini: https://gemini.google.com/share/11ca3c86e129
+Conversation with claude code: 7c4722c6-c853-45e1-82f2-672cd3a232b8.jsonl, 688b4d6e-b785-4c52-ba8a-e7e52b6ae0aa.jsonl
+
+Strategy:
+1. Usually I do brainstorming with Gemini (I do not have to worry about the token consumption)
+2. After I understand the domain and problem, I can set up the project from the IDE and start the implementation with Claude Code (better model for implementing features and vibe coding)
+* often used flag /simplify for code refactor
+* for saving time --dangerously-skip-permissions
+3. Sometimes additionally I use the built-in copilot in github to read and review the history
+
+For more specialized tasks I would use some custom MCP's and custom skills, built-in ones where enough for this task.
