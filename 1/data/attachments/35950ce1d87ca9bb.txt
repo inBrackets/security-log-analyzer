@@ -1,0 +1,2 @@
+WARNING  analyzer.parsers.auth_parser:auth_parser.py:91 [auth.log:1] Unrecognised format — skipping: '[NOT SYSLOG 1]'
+WARNING  analyzer.parsers.auth_parser:auth_parser.py:91 [auth.log:2] Unrecognised format — skipping: '[NOT SYSLOG 2]'
