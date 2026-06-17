@@ -116,7 +116,7 @@ def test_single_digit_day_with_double_space_is_parsed(tmp_path):
     log_file = tmp_path / "auth.log"
     log_file.write_text(line + "\n", encoding="utf-8")
 
-    entries = list(AuthLogParser().parse(log_file))
+    entries = list(AuthLogParser(year=2025).parse(log_file))
 
     assert len(entries) == 1
     assert entries[0].timestamp == datetime(2025, 7, 3, 9, 30, 0)

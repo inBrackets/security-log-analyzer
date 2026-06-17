@@ -62,8 +62,8 @@ class AuthLogParser(BaseParser):
     - Blank lines are silently ignored.
     """
 
-    def __init__(self, year: int = 2025) -> None:
-        self._year = year
+    def __init__(self, year: int | None = None) -> None:
+        self._year = year if year is not None else datetime.now().year
 
     def parse(self, path: Path) -> Generator[AuthEntry, None, None]:
         _log.debug("Opening %s", path)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from datetime import date, datetime
 from itertools import chain
 from pathlib import Path
 
@@ -39,6 +40,14 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--show-evidence", action="store_true",
         help="Print supporting log lines beneath each incident",
+    )
+    p.add_argument(
+        "--start", metavar="DATETIME",
+        help="Show only incidents at or after this time (YYYY-MM-DD HH:MM or YYYY-MM-DD)",
+    )
+    p.add_argument(
+        "--end", metavar="DATETIME",
+        help="Show only incidents at or before this time (YYYY-MM-DD HH:MM or YYYY-MM-DD)",
     )
     p.add_argument(
         "--verbose", "-v", action="store_true",
@@ -103,6 +112,28 @@ def _ask_yes_no(prompt: str, default: bool = False) -> bool:
     return default if not raw else raw.startswith("y")
 
 
+def _parse_dt(s: str) -> datetime | None:
+    s = s.strip()
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(s)
+    except ValueError:
+        raise ValueError(f"Cannot parse {s!r} -- use YYYY-MM-DD HH:MM or YYYY-MM-DD")
+
+
+def _ask_datetime_opt(label: str, example: str) -> str:
+    while True:
+        raw = input(f"  {label} [e.g. {example}, blank = no limit]: ").strip()
+        if not raw:
+            return ""
+        try:
+            _parse_dt(raw)
+            return raw
+        except ValueError as e:
+            print(f"  {e}")
+
+
 def _interactive_menu() -> list[str]:
     print("\nSecurity Log Analyzer")
     print("=" * 30)
@@ -132,7 +163,16 @@ def _interactive_menu() -> list[str]:
         default_idx=0,
     )
 
+    today = date.today().isoformat()
+    print("\nTime range filter:")
+    start_str = _ask_datetime_opt("From", f"{today} 00:00")
+    end_str   = _ask_datetime_opt("To  ", f"{today} 23:59")
+
     argv = ["--log-dir", log_dir, "--output", fmt, "--min-severity", sev]
+    if start_str:
+        argv += ["--start", start_str]
+    if end_str:
+        argv += ["--end", end_str]
 
     if fmt == "table" and _ask_yes_no("Show supporting log lines?", default=False):
         argv.append("--show-evidence")
@@ -167,6 +207,21 @@ def _execute(argv: list[str]) -> int:
         if inc.severity.value >= min_sev.value
     ]
 
+    try:
+        start_dt = _parse_dt(args.start) if args.start else None
+        end_dt   = _parse_dt(args.end)   if args.end   else None
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 1
+
+    if start_dt or end_dt:
+        incidents = [
+            inc for inc in incidents
+            if inc.first_seen
+            and (start_dt is None or inc.first_seen >= start_dt)
+            and (end_dt   is None or inc.first_seen <= end_dt)
+        ]
+
     if args.output == "json":
         print(output.format_json(incidents))
     elif args.output == "narrative":
@@ -191,3 +246,7 @@ def run(argv: list[str] | None = None) -> int:
         return 0
 
     return _execute(argv)
+
+
+if __name__ == "__main__":
+    sys.exit(run())
