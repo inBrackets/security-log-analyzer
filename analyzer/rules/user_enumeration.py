@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from collections.abc import Iterator
-from datetime import datetime
 
 from .base import BaseRule
 from analyzer.models import AuthEntry, Incident, LogEntry, Severity
@@ -32,7 +31,7 @@ class UserEnumerationRule(BaseRule):
         ip = entry.source_ip
         buf = self._attempts[ip]
         buf.append((entry.timestamp, entry.username or "?", entry.raw))
-        self._evict(buf, entry.timestamp)
+        self._evict(buf, entry.timestamp, self._window)
 
         if len(buf) >= self._threshold and ip not in self._alerted:
             self._alerted.add(ip)
@@ -48,6 +47,3 @@ class UserEnumerationRule(BaseRule):
                 count=len(buf),
             )
 
-    def _evict(self, buf: deque, current: datetime) -> None:
-        while buf and (current - buf[0][0]).total_seconds() > self._window:
-            buf.popleft()

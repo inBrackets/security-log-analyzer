@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+from collections import deque
 from collections.abc import Iterator
+from datetime import datetime
 
 from analyzer.models import Incident, LogEntry
 
@@ -29,3 +31,7 @@ class BaseRule(ABC):
 
     def flush(self) -> Iterator[Incident]:
         return iter([])
+
+    def _evict(self, buf: deque, current: datetime, window: float) -> None:
+        while buf and (current - buf[0][0]).total_seconds() > window:
+            buf.popleft()

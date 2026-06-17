@@ -4,15 +4,14 @@ CRITICAL escalation on success, and IPTracker integration.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 
 from analyzer.models import Severity
 from analyzer.rules.ip_tracker import IPTracker
 from analyzer.rules.ssh_brute_force import SSHBruteForceRule
-
-BASE_TS = datetime(2025, 7, 3, 10, 0, 0)
+from tests.conftest import BASE_TS
 ATTACKER = "10.0.0.50"
 OTHER_IP = "203.0.113.9"
 

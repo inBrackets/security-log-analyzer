@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections import defaultdict, deque
 from collections.abc import Iterator
-from datetime import datetime
 
 from .base import BaseRule
 from .ip_tracker import IPEvent, IPTracker
@@ -32,7 +31,7 @@ class SSHBruteForceRule(BaseRule):
         self._threshold = threshold
         self._window = window_seconds
         self._tracker = tracker
-        # ip → deque of (timestamp, username, raw_line)
+        # ip → deque of (timestamp, raw_line)
         self._failures: dict[str, deque] = defaultdict(deque)
         self._alerted: set[str] = set()
 
@@ -52,8 +51,8 @@ class SSHBruteForceRule(BaseRule):
 
     def _handle_failure(self, entry: AuthEntry, ip: str) -> Iterator[Incident]:
         buf = self._failures[ip]
-        buf.append((entry.timestamp, entry.username, entry.raw))
-        self._evict(buf, entry.timestamp)
+        buf.append((entry.timestamp, entry.raw))
+        self._evict(buf, entry.timestamp, self._window)
 
         if self._tracker:
             self._tracker.record(ip, IPEvent(
@@ -73,7 +72,7 @@ class SSHBruteForceRule(BaseRule):
                     f"SSH brute force: {len(buf)} failed attempts in "
                     f"{self._window}s for user '{entry.username}'"
                 ),
-                evidence=[e[2] for e in buf],
+                evidence=[e[1] for e in buf],
                 first_seen=buf[0][0],
                 last_seen=entry.timestamp,
                 count=len(buf),
@@ -93,7 +92,7 @@ class SSHBruteForceRule(BaseRule):
             return
 
         count    = len(buf)
-        evidence = [e[2] for e in buf] + [entry.raw]
+        evidence = [e[1] for e in buf] + [entry.raw]
         first    = buf[0][0]
         self._failures[ip] = deque()
         self._alerted.discard(ip)
@@ -112,6 +111,3 @@ class SSHBruteForceRule(BaseRule):
             count=count + 1,
         )
 
-    def _evict(self, buf: deque, current: datetime) -> None:
-        while buf and (current - buf[0][0]).total_seconds() > self._window:
-            buf.popleft()

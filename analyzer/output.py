@@ -24,7 +24,7 @@ def format_table(incidents: list[Incident]) -> str:
     rows = [header, _DIV]
 
     for inc in sorted(incidents, key=lambda i: (-i.severity.value, i.first_seen or "")):
-        ts = inc.first_seen.strftime("%Y-%m-%d %H:%M:%S") if inc.first_seen else "—"
+        ts = inc.first_seen.strftime("%Y-%m-%d %H:%M:%S") if inc.first_seen else "N/A"
         desc = inc.description
         max_w = _COLS[3][1] - 2
         if len(desc) > max_w:

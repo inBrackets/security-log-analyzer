@@ -1,14 +1,14 @@
 from __future__ import annotations
 
+import re
 from collections import defaultdict, deque
 from collections.abc import Iterator
-from datetime import datetime
 
 from .base import BaseRule
 from .ip_tracker import IPEvent, IPTracker
 from analyzer.models import Incident, LogEntry, Severity, WebEntry
 
-_LOGIN_PATHS = {"/login", "/signin", "/auth", "/session", "/wp-login.php"}
+_LOGIN_RE = re.compile(r"/login|/signin|/auth|/session|/wp-login\.php")
 
 
 class WebBruteForceRule(BaseRule):
@@ -57,7 +57,7 @@ class WebBruteForceRule(BaseRule):
     def _handle_failure(self, entry: WebEntry, ip: str) -> Iterator[Incident]:
         buf = self._failures[ip]
         buf.append((entry.timestamp, entry.raw))
-        self._evict(buf, entry.timestamp)
+        self._evict(buf, entry.timestamp, self._window)
 
         if self._tracker:
             self._tracker.record(ip, IPEvent(
@@ -117,8 +117,4 @@ class WebBruteForceRule(BaseRule):
         )
 
     def _is_login(self, path: str) -> bool:
-        return path in _LOGIN_PATHS or any(p in path for p in _LOGIN_PATHS)
-
-    def _evict(self, buf: deque, current: datetime) -> None:
-        while buf and (current - buf[0][0]).total_seconds() > self._window:
-            buf.popleft()
+        return bool(_LOGIN_RE.search(path))

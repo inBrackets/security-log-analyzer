@@ -57,38 +57,28 @@ class CrossProtocolBruteForceRule(BaseRule):
         if ip in self._alerted:
             return
 
-        active = self._tracker.active_failure_protocols(ip, self._window, entry.timestamp)
-        if len(active) < 2:
-            return  # only one protocol seen so far
+        # Single query; group by protocol to check thresholds and build evidence
+        all_in_window = self._tracker.query(
+            ip,
+            event_type="failure",
+            window_seconds=self._window,
+            reference_ts=entry.timestamp,
+        )
 
-        # Both protocols must independently meet the per-protocol threshold
-        for proto in active:
-            failures = self._tracker.query(
-                ip,
-                event_type="failure",
-                protocol=proto,
-                window_seconds=self._window,
-                reference_ts=entry.timestamp,
-            )
+        by_proto: dict[str, list] = {}
+        for ev in all_in_window:
+            by_proto.setdefault(ev.protocol, []).append(ev)
+
+        if len(by_proto) < 2:
+            return  # fewer than 2 protocols
+
+        for failures in by_proto.values():
             if len(failures) < self._threshold:
-                return  # not enough evidence on this channel yet
+                return  # protocol below threshold
 
         self._alerted.add(ip)
 
-        all_failures = sorted(
-            (
-                ev
-                for proto in active
-                for ev in self._tracker.query(
-                    ip,
-                    event_type="failure",
-                    protocol=proto,
-                    window_seconds=self._window,
-                    reference_ts=entry.timestamp,
-                )
-            ),
-            key=lambda ev: ev.timestamp,
-        )
+        all_failures = sorted(all_in_window, key=lambda ev: ev.timestamp)
 
         yield Incident(
             rule_name=self.name,
@@ -96,7 +86,7 @@ class CrossProtocolBruteForceRule(BaseRule):
             source_ip=ip,
             description=(
                 f"Multi-vector brute force: {ip} attacking via "
-                f"{' + '.join(p.upper() for p in sorted(active))} simultaneously"
+                f"{' + '.join(p.upper() for p in sorted(by_proto))} simultaneously"
             ),
             evidence=[
                 f"[{ev.protocol.upper()}] {ev.detail}" for ev in all_failures

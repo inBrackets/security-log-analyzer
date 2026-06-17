@@ -3,13 +3,12 @@ Unit tests for IPTracker — storage, eviction, and query filtering.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 
 from analyzer.rules.ip_tracker import IPEvent, IPTracker
-
-BASE_TS = datetime(2025, 7, 3, 10, 0, 0)
+from tests.conftest import BASE_TS
 
 
 def _ev(*, protocol="ssh", event_type="failure", ts_offset: float = 0, detail="test") -> IPEvent:

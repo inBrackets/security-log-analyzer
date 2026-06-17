@@ -7,15 +7,14 @@ IPEvent objects to isolate the rule's own logic.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 
 from analyzer.models import Severity
 from analyzer.rules.cross_protocol import CrossProtocolBruteForceRule
 from analyzer.rules.ip_tracker import IPEvent, IPTracker
-
-BASE_TS = datetime(2025, 7, 3, 10, 0, 0)
+from tests.conftest import BASE_TS
 ATTACKER = "10.0.0.50"
 
 

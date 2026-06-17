@@ -4,14 +4,13 @@ CRITICAL escalation on POST 200, and IPTracker integration.
 """
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 
 from analyzer.models import Severity
 from analyzer.rules.web_brute_force import WebBruteForceRule
-
-BASE_TS = datetime(2025, 7, 3, 10, 0, 0)
+from tests.conftest import BASE_TS
 ATTACKER = "10.0.0.50"
 
 
